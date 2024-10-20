@@ -1,0 +1,5 @@
+__pycache__/
+.mypy_cache/
+.venv/
+nn_hw_3.code-workspace
+*.py[cod]
