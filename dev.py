@@ -6,28 +6,39 @@ from fnn import FNN
 
 def test_fnn_sin():
     rng = np.random.default_rng(1337)
-    l1 = Layer(1, 10, "relu", rng=rng)
-    l2 = Layer(10, 10, "relu", rng=rng)
-    l3 = Layer(10, 10, "relu", rng=rng)
-    l4 = Layer(10, 10, "relu", rng=rng)
-    l5 = Layer(10, 1, "identity", rng=rng)
-    net = FNN((l1, l2, l3, l4, l5), lr=0.001, bias=True, rng=rng)
-    x_train = np.linspace(-4, 4, 100)
+    l1 = Layer(1, 16, "relu", rng=rng)
+    l2 = Layer(16, 16, "sigmoid", rng=rng)
+    l3 = Layer(16, 1, "identity", rng=rng)
+    net = FNN((l1, l2, l3), lr=0.01, bias=True, rng=rng)
+    x_train = np.linspace(-3, 3, 100)
     y_train = np.sin(x_train)
-
-    epochs = 1500
+    loss_key = "mse"
+    history = []
+    epochs = 1000
     for _ in range(epochs):
+        epoch_loss = 0
         for x, y in zip(x_train, y_train):
-            net.gd(x, y, "mse")
+            loss = net.gd(x, y, loss_key)
+            epoch_loss += loss
+        average_loss =  epoch_loss / len(x_train)
+        history.append(average_loss)
 
     y_hats = np.array([])
     for x in x_train:
         o, _ = net.forward_with_history(x)
         y_hats = np.append(y_hats, o)
+    plt.figure(1)
     plt.plot(x_train, y_train, "b.")
     plt.plot(x_train, y_hats, "r.")
-
+    plt.figure(2)
+    plt.plot(history)
+    plt.xlabel('Epochs')
+    if loss_key == "mse":
+        plt.ylabel('Mean Squared Error')
+    elif loss_key == "log":
+        plt.ylabel('Log Error')
     plt.show()
+
 
 
 test_fnn_sin()
