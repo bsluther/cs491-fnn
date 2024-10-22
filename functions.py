@@ -16,6 +16,18 @@ ActivationKey = Literal["relu", "sigmoid", "identity"]
 
 Fn = namedtuple("Fn", ["forward", "backward"])
 
+# Parameters for activation functions:
+# a_curr: the preactivation vector for the current layer
+# h_curr: the postactivation vector for the current layer
+# g_next: the next gradient, which in the case of an activation function is the loss-to-node gradient
+# for the pre-activation vector, g_a_next.
+
+#       Linear combination       Activation         Linear combination
+#         W_curr @ h_prev        phi(a_curr)         W_next @ h_curr
+#   h_prev     ---->     a_curr     ---->     h_curr     ---->     a_next
+#  g_h_prev    <----    g_a_curr    <----    g_h_curr    <----    g_a_next
+#
+
 
 def identity_forward(a_curr: NDArray):
     return a_curr
@@ -82,9 +94,14 @@ def get_activation_fn(
 
 # Loss Functions
 
+# o: output of the network
+# y: observed value to use in computing the loss
+
 LossKey = Literal["log", "mse"]
 
 
+# Note: this log_loss was just used to mimmick the book example, it doesn't actually incorporate the
+# observed value y so probably not actually useful for our purposes.
 def log_loss_forward(o: float | NDArray, y: float | NDArray):
     return -np.log(o)
 
