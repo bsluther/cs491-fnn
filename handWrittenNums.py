@@ -7,7 +7,7 @@ from layer import Layer  # Assuming your Layer class is implemented
 from functions import get_loss_fn  # Implemented NLLLoss and activations
 
 # Load MNIST dataset using sklearn
-def load_mnist(test_size = 0.001, random_state = 42):
+def load_mnist(test_size = 0.3, random_state = 42):
     mnist = fetch_openml('mnist_784', version=1, as_frame=False) # get the data set
     X = mnist['data'].astype(np.float32) / 255.0  # Normalize the input to [0, 1]
     y = mnist['target'].astype(int)  # Convert targets to integers
@@ -24,12 +24,13 @@ def train_fnn_mnist(X_train, y_train, X_test, y_test, batch_size=64, epochs=10, 
 
     rng = np.random.default_rng(1337)
     # Initialize the FNN with LogSoftmax activation in the last layer
-    l1 = Layer(in_features=784, out_features=128, activation_key="relu")
-    l2 = Layer(in_features=128, out_features=64, activation_key="sigmoid")
-    l3 = Layer(in_features=64, out_features=10, activation_key="log_softmax")
+    l1 = Layer(in_features=784, out_features=256, activation_key="leaky_relu")
+    l2 = Layer(in_features=256, out_features=128, activation_key="sigmoid")
+    l3 = Layer(in_features=128, out_features=64, activation_key="sigmoid")
+    l4 = Layer(in_features=64, out_features=10, activation_key="log_softmax")
 
     # Create the FNN model
-    fnn = FNN(layers=(l1, l2, l3), lr=learning_rate, bias=True, rng=rng)
+    fnn = FNN(layers=(l1, l2, l3,l4), lr=learning_rate, bias=True, rng=rng)
 
     history = []
 

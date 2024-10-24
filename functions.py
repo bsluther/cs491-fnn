@@ -12,7 +12,7 @@ import numpy as np
 # a common interface, some functions have unused parameters.
 
 
-ActivationKey = Literal["relu", "sigmoid", "identity", "log_softmax"]
+ActivationKey = Literal["relu", "leaky_relu", "sigmoid", "identity", "log_softmax"]
 
 Fn = namedtuple("Fn", ["forward", "backward"])
 
@@ -85,6 +85,8 @@ def get_activation_fn(
     """
     if key == "relu":
         return Fn(relu_forward, relu_backward)
+    if key == "leaky_relu":
+        return Fn(leaky_relu_forward, leaky_relu_backward)
     if key == "sigmoid":
         return Fn(sigmoid_forward, sigmoid_backward)
     if key == "identity":
@@ -148,6 +150,14 @@ def nll_loss_backward(o: NDArray, y: NDArray):
     delta[y] = -1
     return delta
 
+# Leaky ReLU Forward
+def leaky_relu_forward(a_curr: NDArray, alpha: float = 0.01):
+    a_curr = np.clip(a_curr, -1e3, 1e3)  # Clipping values to prevent overflow
+    return np.where(a_curr > 0, a_curr, alpha * a_curr)
+
+# Leaky ReLU Backward
+def leaky_relu_backward(a_curr: NDArray, h_curr: NDArray, g_next: NDArray, alpha: float = 0.01):
+    return np.where(a_curr > 0, g_next, alpha * g_next)
 
 def get_loss_fn(key: LossKey):
     if key == "log":
