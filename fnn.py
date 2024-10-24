@@ -211,12 +211,12 @@ class FNN:
         """
         # Compute the forward values and store intermediate values
         y_hat, history = self.forward_with_history(x)
-
+            # loss for mean squared error
         if loss_key == "mse":
-            # Compute the mse loss value
             loss = 0.5 * np.mean((y_hat - y) ** 2)
+            # loss for logistic regression
         elif loss_key == "log":
-            loss = loss = np.log(1 + np.exp(-y * y_hat))
+            loss = np.log(1 + np.exp(-y * y_hat))
 
         # Compute the loss-to-weight gradients via backpropagation
         gradients, history = self.backward_from_history(y, history, loss_key)

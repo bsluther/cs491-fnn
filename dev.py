@@ -6,15 +6,15 @@ from fnn import FNN
 
 def test_fnn_sin():
     rng = np.random.default_rng(1337)
-    l1 = Layer(1, 16, "relu", rng=rng)
-    l2 = Layer(16, 16, "sigmoid", rng=rng)
-    l3 = Layer(16, 1, "identity", rng=rng)
+    l1 = Layer(1, 16, "identity", rng=rng)
+    l2 = Layer(16, 20, "sigmoid", rng=rng)
+    l3 = Layer(20, 1, "identity", rng=rng)
     net = FNN((l1, l2, l3), lr=0.01, bias=True, rng=rng)
-    x_train = np.linspace(-3, 3, 100)
+    x_train = np.linspace(-3, 3, 50)
     y_train = np.sin(x_train)
     loss_key = "mse"
     history = []
-    epochs = 1000
+    epochs = 1500
     for _ in range(epochs):
         epoch_loss = 0
         for x, y in zip(x_train, y_train):
