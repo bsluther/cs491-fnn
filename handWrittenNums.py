@@ -2,9 +2,11 @@ import numpy as np
 from sklearn.datasets import fetch_openml
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
-from fnn import FNN  # Assuming you have your FNN class
-from layer import Layer  # Assuming your Layer class is implemented
-from functions import get_loss_fn  # Implemented NLLLoss and activations
+from fnn import FNN
+import matplotlib.pyplot as plt
+import random
+from layer import Layer
+
 
 # Load MNIST dataset using sklearn
 def load_mnist(test_size = 0.3, random_state = 42):
@@ -57,6 +59,8 @@ def train_fnn_mnist(X_train, y_train, X_test, y_test, batch_size=64, epochs=10, 
         accuracy = evaluate_network(fnn, X_test, y_test, batch_size)
         print(f'Epoch {epoch+1}/{epochs}, Loss: {epoch_loss:.4f}, Test Accuracy: {accuracy:.4f}')
 
+    return fnn
+
 def evaluate_network(fnn, X_test, y_test, batch_size=64):
     correct = 0
     total = 0
@@ -76,14 +80,38 @@ def evaluate_network(fnn, X_test, y_test, batch_size=64):
     accuracy = correct / total
     return accuracy
 
+
+def display_predictions(fnn, X_test, y_test, num_samples=5):
+    # Randomly select `num_samples` indices from the test set
+    indices = random.sample(range(len(X_test)), num_samples)
+
+    for idx in indices:
+        x = X_test[idx]
+        y_true = y_test[idx]
+
+        # Make a prediction using the trained FNN
+        output = fnn.forward(x)
+        y_pred = np.argmax(output)
+
+        # Reshape x to a 28x28 image (since MNIST images are 28x28)
+        img = x.reshape(28, 28)
+
+        # Plot the image and display the prediction
+        plt.imshow(img, cmap='gray')
+        plt.title(f"True Label: {y_true}, Predicted: {y_pred}")
+        plt.axis('off')
+        plt.show()
+
 def main():
     # Load and preprocess MNIST dataset
     X_train, X_test, y_train, y_test = load_mnist()
 
     # Train the FNN on MNIST dataset
     print("Starting training...")
-    train_fnn_mnist(X_train, y_train, X_test, y_test, batch_size=64, epochs=10, learning_rate=0.0001)
+    fnn = train_fnn_mnist(X_train, y_train, X_test, y_test, batch_size=64, epochs=10, learning_rate=0.0001)
     print("Training complete.")
+
+    display_predictions(fnn, X_test, y_test, num_samples=5)
 
 if __name__ == "__main__":
     main()
