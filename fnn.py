@@ -217,6 +217,12 @@ class FNN:
             loss = 0.5 * np.mean((y_hat - y) ** 2)
         elif loss_key == "log":
             loss = loss = np.log(1 + np.exp(-y * y_hat))
+        elif loss_key == "nll":
+            # Handle single sample (1D) and batch (2D) cases
+            # Single sample case: y_hat is 1D
+            loss = -y_hat[y]  # Index into the log-probability for the correct class
+
+
 
         # Compute the loss-to-weight gradients via backpropagation
         gradients, history = self.backward_from_history(y, history, loss_key)
@@ -224,6 +230,7 @@ class FNN:
         for k, gradient in enumerate(gradients):
             self.layers[k].weights -= self.lr * gradient
         return loss
+
     @staticmethod
     def validate_layer_sizes(layers: tuple[Layer, ...]):
         """

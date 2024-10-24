@@ -12,7 +12,7 @@ import numpy as np
 # a common interface, some functions have unused parameters.
 
 
-ActivationKey = Literal["relu", "sigmoid", "identity"]
+ActivationKey = Literal["relu", "sigmoid", "identity", "log_softmax"]
 
 Fn = namedtuple("Fn", ["forward", "backward"])
 
@@ -89,6 +89,9 @@ def get_activation_fn(
         return Fn(sigmoid_forward, sigmoid_backward)
     if key == "identity":
         return Fn(identity_forward, identity_backward)
+    if key == "log_softmax":
+        return Fn(log_softmax_forward, log_softmax_backward)
+
     raise ValueError(f"Unrecognized activation key '{key}'")
 
 
@@ -117,10 +120,40 @@ def mse_forward(o: float | NDArray, y: float | NDArray):
 def mse_backward(o: float | NDArray, y: float | NDArray):
     return 2 * (o - y)
 
+def log_softmax_forward(a_curr: np.ndarray) -> np.ndarray:
+    # Subtract the maximum value for numerical stability
+    a_shifted = a_curr - np.max(a_curr)
+    # Compute log-softmax
+    log_probs = a_shifted - np.log(np.sum(np.exp(a_shifted)))
+    return log_probs
+
+
+def log_softmax_backward(a_curr:  np.ndarray, h_curr: np.ndarray, g_next: np.ndarray,) -> np.ndarray:
+    # Compute softmax probabilities
+    softmax_probs = np.exp(h_curr)
+    # Compute gradient
+    grad_a_curr = g_next - np.dot(g_next, softmax_probs) * softmax_probs
+    return grad_a_curr
+
+def nll_loss_forward(o: np.ndarray, y: np.ndarray) -> float:
+    # Extract the log probability of the correct class
+    log_prob = o[y]
+    # Compute the negative log likelihood loss
+    loss = -log_prob
+    return loss
+
+def nll_loss_backward(o: NDArray, y: NDArray):
+    # Single sample case
+    delta = np.zeros_like(o)
+    delta[y] = -1
+    return delta
+
 
 def get_loss_fn(key: LossKey):
     if key == "log":
         return Fn(log_loss_forward, log_loss_backward)
     if key == "mse":
         return Fn(mse_forward, mse_backward)
+    if key == "nll":
+        return Fn(nll_loss_forward, nll_loss_backward)
     raise ValueError(f"Unrecognized loss key '{key}'")
