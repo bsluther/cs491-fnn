@@ -44,6 +44,10 @@ class Layer:
         self.activation_forward = forward
         self.activation_backward = backward
         self.rng = rng
-        self.weights = self.rng.uniform(
-            low=-1, high=1, size=(out_features, in_features)
+        if activation_key in ["relu", "leaky_relu"]:
+            # print("HELLOWP@KI)ONRTIJOJJJJNWESWF")
+            self.weights = self.rng.normal(0, np.sqrt(2 / in_features) * 0.25, size=(out_features, in_features))
+        else:
+            self.weights = self.rng.uniform(
+                low=-1, high=1, size=(out_features, in_features)
         )
