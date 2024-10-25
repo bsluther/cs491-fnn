@@ -40,11 +40,11 @@ def test_fnn_vanderpol():
     l2 = Layer(16, 16, "sigmoid", rng=rng)
     l3 = Layer(16, 2, "identity", rng=rng)
 
-    net = FNN((l1, l2, l3), lr=0.001, bias=True, rng=rng)
+    net = FNN((l1, l2, l3), lr=0.01, bias=True, rng=rng)
 
     # Defining the parameters for training for mini-batch
     batch_size = 32
-    num_epochs = 1000
+    num_epochs = 500
     loss_key = "mse"
     history = []
 
@@ -58,17 +58,13 @@ def test_fnn_vanderpol():
             batch_x = x_train_shuffled[i:i + batch_size]
             batch_y = y_train_shuffled[i:i + batch_size]
 
-            batch_loss = 0
-            for x,y in zip(batch_x, batch_y):
-                # Performing the gradient descent
-                loss = net.gd(x, y, loss_key)
-                batch_loss += loss
-
-            epoch_loss += batch_loss / len(batch_x)
+            # Using minibatch gradient descent in order to update the weights and compute the average loss.
+            batch_loss = net.minibatchGD(batch_x, batch_y, loss_key="mse")
+            epoch_loss += batch_loss
 
         history.append(epoch_loss / (len(x_train) // batch_size))
 
-        if epoch % 100 == 0:
+        if epoch % 10 == 0:
             print(f'Epoch {epoch}, Loss:{history[-1]:.6f}')
 
     # Plotting the loss over epochs

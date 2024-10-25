@@ -258,7 +258,8 @@ class FNN:
             if(loss_key == "nll"):
                 loss = -y_hat[y]  # Scalar
             # else:
-
+            elif loss_key == "mse":
+                loss = 0.5 * np.mean((y_hat -y) ** 2)
             # ( from the slides add up all the losses )
             total_loss += loss
 
