@@ -3,3 +3,4 @@ __pycache__/
 .venv/
 nn_hw_3.code-workspace
 *.py[cod]
+myvenv
