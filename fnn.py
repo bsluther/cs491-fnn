@@ -1,3 +1,4 @@
+import layer
 from layer import Layer
 import numpy as np
 from numpy.typing import NDArray
@@ -218,8 +219,6 @@ class FNN:
         elif loss_key == "log":
             loss = loss = np.log(1 + np.exp(-y * y_hat))
         elif loss_key == "nll":
-            # Handle single sample (1D) and batch (2D) cases
-            # Single sample case: y_hat is 1D
             loss = -y_hat[y]  # Index into the log-probability for the correct class
 
 
@@ -229,7 +228,55 @@ class FNN:
         # Update the weights according to the gradients
         for k, gradient in enumerate(gradients):
             self.layers[k].weights -= self.lr * gradient
+
         return loss
+
+    def minibatchGD(self, X_batch, y_batch, loss_key):
+        """
+        Perform forward and backward pass on a mini-batch and update weights.
+
+        Args:
+            X_batch (NDArray): Input data for the mini-batch (shape: (batch_size, input_dim)).
+            y_batch (NDArray): True labels for the mini-batch (shape: (batch_size,)).
+            loss_key (str, optional): Loss function key (e.g., "nll", "mse")
+
+        Returns:
+            float: Average loss over the mini-batch.
+        """
+        batch_size = X_batch.shape[0]
+        accumulated_gradients = [np.zeros_like(layer.weights) for layer in self.layers]
+        total_loss = 0.0
+
+        for i in range(batch_size):
+            x = X_batch[i]
+            y = y_batch[i]
+
+            # Forward pass
+            y_hat, history = self.forward_with_history(x)  # Shape: (batch_size, num_classes)
+
+            # Compute loss
+            if(loss_key == "nll"):
+                loss = -y_hat[y]  # Scalar
+            # else:
+
+            # ( from the slides add up all the losses )
+            total_loss += loss
+
+            # Backward pass to compute gradients
+            gradients, history = self.backward_from_history(y, history, loss_key)  # List of gradients
+
+            for j in range(len(accumulated_gradients)):
+                accumulated_gradients[j] += gradients[j]
+
+        # Average the gradients and loss over the batch
+        averaged_gradients = [g_acc / batch_size for g_acc in accumulated_gradients]
+        average_loss = total_loss / batch_size
+
+        # Update weights
+        for k, gradient in enumerate(averaged_gradients):
+            self.layers[k].weights -= self.lr * gradient
+
+        return average_loss
 
     @staticmethod
     def validate_layer_sizes(layers: tuple[Layer, ...]):

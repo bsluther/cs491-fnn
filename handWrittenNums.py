@@ -9,7 +9,7 @@ from layer import Layer
 
 
 # Load MNIST dataset using sklearn
-def load_mnist(test_size = 0.3, random_state = 42):
+def load_mnist(test_size = 0.2, random_state = 42):
     mnist = fetch_openml('mnist_784', version=1, as_frame=False) # get the data set
     X = mnist['data'].astype(np.float32) / 255.0  # Normalize the input to [0, 1]
     y = mnist['target'].astype(int)  # Convert targets to integers
@@ -22,46 +22,51 @@ def load_mnist(test_size = 0.3, random_state = 42):
 
 
 # Training function for FNN using mini-batch SGD
-def train_fnn_mnist(X_train, y_train, X_test, y_test, batch_size=64, epochs=10, learning_rate=0.0001):
+def train_fnn_mnist(X_train, y_train, X_test, y_test, batch_size=128, epochs=20, learning_rate=0.01):
 
     rng = np.random.default_rng(1337)
     # Initialize the FNN with LogSoftmax activation in the last layer
-    l1 = Layer(in_features=784, out_features=256, activation_key="leaky_relu")
-    l2 = Layer(in_features=256, out_features=128, activation_key="sigmoid")
-    l3 = Layer(in_features=128, out_features=64, activation_key="sigmoid")
+    l1 = Layer(in_features=784, out_features=128, activation_key="relu")
+    l2 = Layer(in_features=128, out_features=64, activation_key="relu")
+    l3 = Layer(in_features=64, out_features=64, activation_key="relu")
     l4 = Layer(in_features=64, out_features=10, activation_key="log_softmax")
 
     # Create the FNN model
-    fnn = FNN(layers=(l1, l2, l3,l4), lr=learning_rate, bias=True, rng=rng)
+    fnn = FNN(layers=(l1, l2, l3, l4), lr=learning_rate, bias=True, rng=rng)
 
     history = []
 
     for epoch in range(epochs):
+        # we shuffle the training samples every time
         X_train, y_train = shuffle(X_train, y_train)  # Shuffle data every epoch
         epoch_loss = 0.0
 
         # Mini-batch training
         for i in range(0, len(X_train), batch_size):
+            # samples here are randomly selected
             X_batch = X_train[i:i + batch_size]
             y_batch = y_train[i:i + batch_size]
+            #
+            # batch_loss = 0
+            # for x, y in zip(X_batch, y_batch):
+            # Forward and backward pass for each mini-batch
+            # loss = fnn.gd(x, y, loss_key="nll")  # Using NLLLoss (log loss)
+            # batch_loss += loss
+            loss = fnn.minibatchGD(X_batch, y_batch, loss_key='nll')
+            epoch_loss += loss
 
-            batch_loss = 0
-            for x, y in zip(X_batch, y_batch):
+            # epoch_loss += batch_loss / len(X_batch)
+        avg_epoch_loss = epoch_loss / (len(X_train) / batch_size)
+        history.append(avg_epoch_loss)
 
-                # Forward and backward pass for each mini-batch
-                loss = fnn.gd(x, y, loss_key="nll")  # Using NLLLoss (log loss)
-                batch_loss += loss
-
-            epoch_loss += batch_loss / len(X_batch)
-
-        history.append(epoch_loss / (len(X_train) // batch_size))
+        # history.append(epoch_loss / (len(X_train) // batch_size))
         # Evaluate the network after each epoch
         accuracy = evaluate_network(fnn, X_test, y_test, batch_size)
         print(f'Epoch {epoch+1}/{epochs}, Loss: {epoch_loss:.4f}, Test Accuracy: {accuracy:.4f}')
 
     return fnn
 
-def evaluate_network(fnn, X_test, y_test, batch_size=64):
+def evaluate_network(fnn, X_test, y_test, batch_size=128):
     correct = 0
     total = 0
 
@@ -108,10 +113,10 @@ def main():
 
     # Train the FNN on MNIST dataset
     print("Starting training...")
-    fnn = train_fnn_mnist(X_train, y_train, X_test, y_test, batch_size=64, epochs=10, learning_rate=0.0001)
+    fnn = train_fnn_mnist(X_train, y_train, X_test, y_test, batch_size=64, epochs=20, learning_rate=0.01)
     print("Training complete.")
 
-    display_predictions(fnn, X_test, y_test, num_samples=5)
+    display_predictions(fnn, X_test, y_test, num_samples=10)
 
 if __name__ == "__main__":
     main()
