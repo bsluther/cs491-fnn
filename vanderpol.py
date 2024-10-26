@@ -10,7 +10,7 @@ def vanderpol(x1, x2):
     return dx1, dx2
 
 # Defining a function which generates the dataset of states and their next steps which is calculated using a given time step.
-def generate_vanderpol_samples(num_samples=1000, time_step=0.075):
+def generate_vanderpol_samples(num_samples=1000, time_step=0.5):
     # It generates random number
     rng = np.random.default_rng(1337)
     # It randomly generates initial states
