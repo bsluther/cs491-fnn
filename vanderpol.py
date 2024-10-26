@@ -10,7 +10,7 @@ def vanderpol(x1, x2):
     return dx1, dx2
 
 # Defining a function which generates the dataset of states and their next steps which is calculated using a given time step.
-def generate_vanderpol_samples(num_samples=1000, time_step=0.5):
+def generate_vanderpol_samples(num_samples=1000, time_step=0.075):
     # It generates random number
     rng = np.random.default_rng(1337)
     # It randomly generates initial states
@@ -36,8 +36,8 @@ def test_fnn_vanderpol():
 
     # Using three different activation function to initialize FNN with three layers
     rng = np.random.default_rng(1337)
-    l1 = Layer(2, 16, "relu", rng=rng)
-    l2 = Layer(16, 16, "sigmoid", rng=rng)
+    l1 = Layer(2, 20, "relu", rng=rng)
+    l2 = Layer(20, 16, "relu", rng=rng)
     l3 = Layer(16, 2, "identity", rng=rng)
 
     net = FNN((l1, l2, l3), lr=0.01, bias=True, rng=rng)
@@ -83,8 +83,13 @@ def test_fnn_vanderpol():
 
     # Plotting the states for predicted versus true
     plt.figure()
-    plt.scatter(y_test_true[:, 0], y_test_true[:, 1], color='blue', label='True Next State')
-    plt.scatter(y_test_pred[:, 0], y_test_pred[: , 1], color='red', label='Predicted Next State')
+    plt.scatter(y_test_true[:, 0], y_test_true[:, 1], color='blue', label='True')
+    plt.scatter(y_test_pred[:, 0], y_test_pred[: , 1], color='red', label='Predicted')
+
+    # Draw connecting lines between corresponding points
+    for i in range(len(y_test_true)):
+        plt.plot([y_test_true[i, 0], y_test_pred[i, 0]],[y_test_true[i, 1], y_test_pred[i, 1]],
+             color='gray', linestyle='-', linewidth=0.5)
     plt.xlabel('x1_next')
     plt.ylabel('x2_next')
     plt.legend()
