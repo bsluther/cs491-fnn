@@ -12,7 +12,7 @@ import numpy as np
 # a common interface, some functions have unused parameters.
 
 
-ActivationKey = Literal["relu", "leaky_relu", "sigmoid", "identity", "log_softmax"]
+ActivationKey = Literal["relu", "sigmoid", "identity", "log_softmax"]
 
 Fn = namedtuple("Fn", ["forward", "backward"])
 
@@ -85,8 +85,6 @@ def get_activation_fn(
     """
     if key == "relu":
         return Fn(relu_forward, relu_backward)
-    if key == "leaky_relu":
-        return Fn(leaky_relu_forward, leaky_relu_backward)
     if key == "sigmoid":
         return Fn(sigmoid_forward, sigmoid_backward)
     if key == "identity":
@@ -124,9 +122,9 @@ def mse_backward(o: float | NDArray, y: float | NDArray):
 
 def log_softmax_forward(a_curr: np.ndarray) -> np.ndarray:
     # Subtract the maximum value for numerical stability
-    a_shifted = a_curr - np.max(a_curr)
+    a_shifted = a_curr - np.max(a_curr, axis=-1, keepdims=True)
     # Compute log-softmax
-    log_probs = a_shifted - np.log(np.sum(np.exp(a_shifted)))
+    log_probs = a_shifted - np.log(np.sum(np.exp(a_shifted), axis=-1, keepdims=True))
     return log_probs
 
 
@@ -145,19 +143,11 @@ def nll_loss_forward(o: np.ndarray, y: np.ndarray) -> float:
     return loss
 
 def nll_loss_backward(o: NDArray, y: NDArray):
-    # Single sample case
-    delta = np.zeros_like(o)
-    delta[y] = -1
+    softmax_probs = np.exp(o)  # Convert log probabilities to probabilities
+    y_one_hot = np.zeros_like(o)
+    y_one_hot[y] = 1
+    delta = softmax_probs - y_one_hot
     return delta
-
-# Leaky ReLU Forward
-def leaky_relu_forward(a_curr: NDArray, alpha: float = 0.01):
-    a_curr = np.clip(a_curr, -1e3, 1e3)  # Clipping values to prevent overflow
-    return np.where(a_curr > 0, a_curr, alpha * a_curr)
-
-# Leaky ReLU Backward
-def leaky_relu_backward(a_curr: NDArray, h_curr: NDArray, g_next: NDArray, alpha: float = 0.01):
-    return np.where(a_curr > 0, g_next, alpha * g_next)
 
 def get_loss_fn(key: LossKey):
     if key == "log":
