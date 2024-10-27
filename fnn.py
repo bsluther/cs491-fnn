@@ -1,17 +1,14 @@
-import layer
-from layer import Layer
 import numpy as np
 from numpy.typing import NDArray
+from layer import Layer
 from functions import LossKey, get_loss_fn
 
 # pylint: disable =unused-argument
 
-# TODO: using default 64-bit floating point numbers, try switching to 16 or 32 to save time.
-
 
 class History:
     """
-    Stores the intermediate values computed during forward and backpropagation which will be needed
+    Stores the intermediate values computed during forward and backpropagation which can be used
     to find the loss-to-weight gradients.
     """
 
@@ -31,6 +28,15 @@ class History:
 
 
 class FNN:
+    """
+    A feedforward neural network (FNN) which computes output via forward propagation and can be
+    trained using gradient descent and mini-batch gradient descent.
+    To construct a FNN, provide a tuple of Layer instances, where each layer is configured
+    individually. Input/ouptut sizes of each layer must match up or an error will be raised.
+    By default the network will be created with a bias absorbed by the weights, this can be disabled
+    by passing bias=False to the constructor.
+    """
+
     def __init__(
         self, layers: tuple[Layer, ...], lr=0.01, bias=True, rng=np.random.default_rng()
     ):
@@ -79,7 +85,9 @@ class FNN:
 
     def forward(self, x: float | NDArray):
         """
-        Just a convenience wrapper around forward_with_history at this point.
+        Compute the output of the network.
+        This is a convenience wrapper around forward_with_history, which just returns the output
+        without the history.
 
         Args:
             x (float | NDArray): Input value(s).
@@ -102,6 +110,7 @@ class FNN:
 
         Returns:
             tuple[float | NDArray, History]:
+            A tuple containing
             1. The output the network.
             2. The forward history.
         """
@@ -136,7 +145,7 @@ class FNN:
 
     def backward_from_history(
         self, y: float | NDArray, history: History, loss_key: LossKey
-    ):
+    ) -> tuple[list[NDArray], History]:
         """
         Compute gradients with respect to the loss function specified by the <code>loss_key</code>.
         History is the data structure used to store intermediate values.
@@ -146,10 +155,13 @@ class FNN:
             history (History): a history containing the already computed forward propagation values,
             loss_key (LossKey): the loss function to compute the gradients against, options are
             - "mse"
-            - "log"
+            - "nll"
+            - "log_example"
 
         Returns:
-            _type_: _description_
+            tuple[list[NDArray], History]: a tuple containing the loss-to-weight gradients (one
+            per layer, ordered according to the layers of the network) and the history of values
+            computed during forward and backward propagation.
         """
         # Lookup the derivative of the loss function with the provided key
         # We don't actually need the loss itself for backpropagation so it's not computed
@@ -198,7 +210,7 @@ class FNN:
         # Return the loss-to-weight derivatives and history (probably don't need to return history).
         return gradients, history
 
-    def gd(self, x: float | NDArray, y: float | NDArray, loss_key: LossKey):
+    def gd(self, x: float | NDArray, y: float | NDArray, loss_key: LossKey) -> float:
         """
         Perform gradient descent by adjusting the weights according the their gradients with
         respect to the loss.
@@ -208,20 +220,18 @@ class FNN:
             y (float | NDArray): the observed value to compute the loss against.
             loss_key (LossKey): loss function to use in determining the gradients, options are:
             - "mse"
-            - "log"
+            - "nll"
+            - "log_example"
+
+        Returns:
+            float: the point-specific loss for this training instance.
         """
         # Compute the forward values and store intermediate values
         y_hat, history = self.forward_with_history(x)
 
-        if loss_key == "mse":
-            # Compute the mse loss value
-            loss = 0.5 * np.mean((y_hat - y) ** 2)
-        elif loss_key == "log":
-            loss = loss = np.log(1 + np.exp(-y * y_hat))
-        elif loss_key == "nll":
-            loss = -y_hat[y]  # Index into the log-probability for the correct class
-
-
+        # Look up the loss function with the provided loss_key
+        loss_forward, _ = get_loss_fn(loss_key)
+        loss = loss_forward(y_hat, y)
 
         # Compute the loss-to-weight gradients via backpropagation
         gradients, history = self.backward_from_history(y, history, loss_key)
@@ -246,25 +256,27 @@ class FNN:
         batch_size = X_batch.shape[0]
         accumulated_gradients = [np.zeros_like(layer.weights) for layer in self.layers]
         total_loss = 0.0
+        # Look up the loss function with the provided loss_key
+        loss_forward, _ = get_loss_fn(loss_key)
 
         for i in range(batch_size):
             x = X_batch[i]
             y = y_batch[i]
 
             # Forward pass
-            y_hat, history = self.forward_with_history(x)  # Shape: (batch_size, num_classes)
+            y_hat, history = self.forward_with_history(
+                x
+            )  # Shape: (batch_size, num_classes)
 
             # Compute loss
-            if(loss_key == "nll"):
-                loss = -y_hat[y]  # Scalar
-            # else:
-            elif loss_key == "mse":
-                loss = 0.5 * np.mean((y_hat -y) ** 2)
+            loss = loss_forward(y_hat, y)
             # ( from the slides add up all the losses )
             total_loss += loss
 
             # Backward pass to compute gradients
-            gradients, history = self.backward_from_history(y, history, loss_key)  # List of gradients
+            gradients, history = self.backward_from_history(
+                y, history, loss_key
+            )  # List of gradients
 
             for j in range(len(accumulated_gradients)):
                 accumulated_gradients[j] += gradients[j]
