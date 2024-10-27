@@ -44,7 +44,7 @@ def test_fnn_vanderpol():
 
     # Defining the parameters for training for mini-batch
     batch_size = 32
-    num_epochs = 500
+    num_epochs = 1000
     loss_key = "mse"
     history = []
 
@@ -64,7 +64,7 @@ def test_fnn_vanderpol():
 
         history.append(epoch_loss / (len(x_train) // batch_size))
 
-        if epoch % 10 == 0:
+        if epoch % 100 == 0:
             print(f'Epoch {epoch}, Loss:{history[-1]:.6f}')
 
     # Plotting the loss over epochs
