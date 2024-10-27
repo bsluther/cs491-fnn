@@ -5,22 +5,23 @@ import numpy as np
 
 # Activation and loss functions paired with their derivatives, retrievable by key.
 
-# Activation Functions
+###### Activation Functions
 
 # pylint: disable=unused-argument
-# Different backward functions need different data, so in order to present
-# a common interface, some functions have unused parameters.
+# Different backward functions need different data, so in order to presen a common interface, some
+# functions have unused parameters.
 
-
+# String literal type containing the implemented activation functions
 ActivationKey = Literal["relu", "sigmoid", "identity", "log_softmax"]
 
+# Tuple type to store functions and their derivatives consistently
 Fn = namedtuple("Fn", ["forward", "backward"])
 
 # Parameters for activation functions:
 # a_curr: the preactivation vector for the current layer
 # h_curr: the postactivation vector for the current layer
-# g_next: the next gradient, which in the case of an activation function is the loss-to-node gradient
-# for the pre-activation vector, g_a_next.
+# g_next: the next gradient, which in the case of an activation function is the loss-to-node
+# gradient for the pre-activation vector, g_a_next.
 
 #       Linear combination       Activation         Linear combination
 #         W_curr @ h_prev        phi(a_curr)         W_next @ h_curr
@@ -65,6 +66,26 @@ def relu_backward(
     return np.where(a_curr > 0, g_next, 0)
 
 
+def log_softmax_forward(a_curr: np.ndarray) -> np.ndarray:
+    # Subtract the maximum value for numerical stability
+    a_shifted = a_curr - np.max(a_curr, axis=-1, keepdims=True)
+    # Compute log-softmax
+    log_probs = a_shifted - np.log(np.sum(np.exp(a_shifted), axis=-1, keepdims=True))
+    return log_probs
+
+
+def log_softmax_backward(
+    a_curr: np.ndarray,
+    h_curr: np.ndarray,
+    g_next: np.ndarray,
+) -> np.ndarray:
+    # Compute softmax probabilities
+    softmax_probs = np.exp(h_curr)
+    # Compute gradient
+    grad_a_curr = g_next - np.dot(g_next, softmax_probs) * softmax_probs
+    return grad_a_curr
+
+
 def get_activation_fn(
     key: ActivationKey,
 ):
@@ -95,65 +116,61 @@ def get_activation_fn(
     raise ValueError(f"Unrecognized activation key '{key}'")
 
 
-# Loss Functions
+##### Loss Functions
 
-# o: output of the network
+# y_hat: output of the network
 # y: observed value to use in computing the loss
 
-LossKey = Literal["log", "mse"]
+# String literal type containing the implemented loss functions
+LossKey = Literal["nll", "mse", "log_example"]
 
 
-# Note: this log_loss was just used to mimmick the book example, it doesn't actually incorporate the
-# observed value y so probably not actually useful for our purposes.
-def log_loss_forward(o: float | NDArray, y: float | NDArray):
-    return -np.log(o)
+# def mse_forward(o: float | NDArray, y: float | NDArray):
+#     return (y - o) ** 2
+def mse_forward(y_hat: float | NDArray, y: float | NDArray):
+    return 0.5 * np.mean((y_hat - y) ** 2)
 
 
-def log_loss_backward(o: float | NDArray, y: float | NDArray):
-    return -1 / o
+def mse_backward(y_hat: float | NDArray, y: float | NDArray):
+    return 2 * (y_hat - y)
 
 
-def mse_forward(o: float | NDArray, y: float | NDArray):
-    return (y - o) ** 2
-
-
-def mse_backward(o: float | NDArray, y: float | NDArray):
-    return 2 * (o - y)
-
-def log_softmax_forward(a_curr: np.ndarray) -> np.ndarray:
-    # Subtract the maximum value for numerical stability
-    a_shifted = a_curr - np.max(a_curr, axis=-1, keepdims=True)
-    # Compute log-softmax
-    log_probs = a_shifted - np.log(np.sum(np.exp(a_shifted), axis=-1, keepdims=True))
-    return log_probs
-
-
-def log_softmax_backward(a_curr:  np.ndarray, h_curr: np.ndarray, g_next: np.ndarray,) -> np.ndarray:
-    # Compute softmax probabilities
-    softmax_probs = np.exp(h_curr)
-    # Compute gradient
-    grad_a_curr = g_next - np.dot(g_next, softmax_probs) * softmax_probs
-    return grad_a_curr
-
-def nll_loss_forward(o: np.ndarray, y: np.ndarray) -> float:
+def nll_loss_forward(y_hat: np.ndarray, y: np.ndarray) -> float:
     # Extract the log probability of the correct class
-    log_prob = o[y]
+    log_prob = y_hat[y]
     # Compute the negative log likelihood loss
     loss = -log_prob
     return loss
 
-def nll_loss_backward(o: NDArray, y: NDArray):
-    softmax_probs = np.exp(o)  # Convert log probabilities to probabilities
-    y_one_hot = np.zeros_like(o)
+
+def nll_loss_backward(y_hat: NDArray, y: NDArray):
+    softmax_probs = np.exp(y_hat)  # Convert log probabilities to probabilities
+    y_one_hot = np.zeros_like(y_hat)
     y_one_hot[y] = 1
     delta = softmax_probs - y_one_hot
     return delta
 
+
+# Note: this log_loss was just used to mimmick the book example, it doesn't actually incorporate the
+# observed value y so probably not actually useful for our purposes.
+def log_loss_example_forward(y_hat: float | NDArray, y: float | NDArray):
+    return -np.log(y_hat)
+
+
+def log_loss_example_backward(y_hat: float | NDArray, y: float | NDArray):
+    return -1 / y_hat
+
+
 def get_loss_fn(key: LossKey):
     if key == "log":
-        return Fn(log_loss_forward, log_loss_backward)
+        return Fn(log_loss_example_forward, log_loss_example_backward)
     if key == "mse":
         return Fn(mse_forward, mse_backward)
     if key == "nll":
         return Fn(nll_loss_forward, nll_loss_backward)
     raise ValueError(f"Unrecognized loss key '{key}'")
+
+
+# Stashing this in case it's needed
+# def log_loss_from_gd(o: NDArray, y: NDArray):
+#     return np.log(1 + np.exp(-y * o))
