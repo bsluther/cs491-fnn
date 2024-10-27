@@ -37,14 +37,14 @@ def test_fnn_vanderpol():
     # Using three different activation function to initialize FNN with three layers
     rng = np.random.default_rng(1337)
     l1 = Layer(2, 20, "relu", rng=rng)
-    l2 = Layer(20, 16, "relu", rng=rng)
+    l2 = Layer(20, 16, "sigmoid", rng=rng)
     l3 = Layer(16, 2, "identity", rng=rng)
 
     net = FNN((l1, l2, l3), lr=0.01, bias=True, rng=rng)
 
     # Defining the parameters for training for mini-batch
     batch_size = 32
-    num_epochs = 1000
+    num_epochs = 500
     loss_key = "mse"
     history = []
 
@@ -64,7 +64,7 @@ def test_fnn_vanderpol():
 
         history.append(epoch_loss / (len(x_train) // batch_size))
 
-        if epoch % 100 == 0:
+        if epoch % 10 == 0:
             print(f'Epoch {epoch}, Loss:{history[-1]:.6f}')
 
     # Plotting the loss over epochs
