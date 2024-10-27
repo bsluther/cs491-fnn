@@ -36,11 +36,11 @@ def test_fnn_vanderpol():
 
     # Using three different activation function to initialize FNN with three layers
     rng = np.random.default_rng(1337)
-    l1 = Layer(2, 16, "relu", rng=rng)
-    l2 = Layer(16, 16, "sigmoid", rng=rng)
+    l1 = Layer(2, 20, "relu", rng=rng)
+    l2 = Layer(20, 16, "sigmoid", rng=rng)
     l3 = Layer(16, 2, "identity", rng=rng)
 
-    net = FNN((l1, l2, l3), lr=0.001, bias=True, rng=rng)
+    net = FNN((l1, l2, l3), lr=0.01, bias=True, rng=rng)
 
     # Defining the parameters for training for mini-batch
     batch_size = 32
@@ -58,13 +58,9 @@ def test_fnn_vanderpol():
             batch_x = x_train_shuffled[i:i + batch_size]
             batch_y = y_train_shuffled[i:i + batch_size]
 
-            batch_loss = 0
-            for x,y in zip(batch_x, batch_y):
-                # Performing the gradient descent
-                loss = net.gd(x, y, loss_key)
-                batch_loss += loss
-
-            epoch_loss += batch_loss / len(batch_x)
+            # Using minibatch gradient descent in order to update the weights and compute the average loss.
+            batch_loss = net.minibatchGD(batch_x, batch_y, loss_key="mse")
+            epoch_loss += batch_loss
 
         history.append(epoch_loss / (len(x_train) // batch_size))
 
@@ -87,8 +83,13 @@ def test_fnn_vanderpol():
 
     # Plotting the states for predicted versus true
     plt.figure()
-    plt.scatter(y_test_true[:, 0], y_test_true[:, 1], color='blue', label='True Next State')
-    plt.scatter(y_test_pred[:, 0], y_test_pred[: , 1], color='red', label='Predicted Next State')
+    plt.scatter(y_test_true[:, 0], y_test_true[:, 1], color='blue', label='True')
+    plt.scatter(y_test_pred[:, 0], y_test_pred[: , 1], color='red', label='Predicted')
+
+    # Draw connecting lines between corresponding points
+    for i in range(len(y_test_true)):
+        plt.plot([y_test_true[i, 0], y_test_pred[i, 0]],[y_test_true[i, 1], y_test_pred[i, 1]],
+             color='gray', linestyle='-', linewidth=0.5)
     plt.xlabel('x1_next')
     plt.ylabel('x2_next')
     plt.legend()
