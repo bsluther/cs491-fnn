@@ -28,6 +28,8 @@ class Layer:
                 A string indicating the activation function to use in this layer. Options are:
                 - "relu"
                 - "sigmoid"
+                - "identity"
+                - "softmax"
 
             rng(generator):
                 A random number generator which will be used to initialize the weights.
@@ -46,11 +48,13 @@ class Layer:
         self.rng = rng
 
         if activation_key in ["relu", "leaky_relu", "log_softmax"]:
-            self.weights = self.rng.normal(0, np.sqrt(2 / in_features), size=(out_features, in_features))
+            self.weights = self.rng.normal(
+                0, np.sqrt(2 / in_features), size=(out_features, in_features)
+            )
         else:
             self.weights = self.rng.uniform(
                 low=-1, high=1, size=(out_features, in_features)
-        )
+            )
 
         # print(
         #     f" Initial max weight = {np.max(np.abs(self.weights))}"
