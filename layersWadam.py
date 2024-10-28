@@ -55,6 +55,7 @@ class Layer:
             self.weights = self.rng.uniform(
                 low=-1, high=1, size=(out_features, in_features)
             )
+
         self.m = np.zeros_like(self.weights)
         self.v = np.zeros_like(self.weights)
         # print(
@@ -70,6 +71,9 @@ class Layer:
         b2 is the decay for the larger gradients int he ast that would have a larger impact.
         eps prevent divide by zero error, and t is the time step for bias correction
         """
+        #help with gradient explosion
+        clip_value = 1.0
+        gr = np.clip(gr, -clip_value, clip_value)
         # updating each parameter first
         self.m = b1 * self.m + (1 - b1) * gr
         self.v = b2 * self.v + (1 - b2) * (gr**2)

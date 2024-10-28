@@ -62,6 +62,16 @@ class FNN:
                     ),
                     axis=1,
                 )
+                layer.m = np.append(
+                    layer.m,
+                    values=np.zeros((layer.weights.shape[0], 1)),
+                    axis=1,
+                )
+                layer.v = np.append(
+                    layer.v,
+                    values=np.zeros((layer.weights.shape[0], 1)),
+                    axis=1,
+                )
 
                 # Add a row to all the weight matrices except the last, because the output of the
                 # last layer is the output of the network and shouldn't include a bias node.
@@ -78,6 +88,17 @@ class FNN:
                         values=np.zeros((1, layer.weights.shape[1])),
                         axis=0,
                     )
+                    layer.m = layer.m = np.append(
+                        layer.m,
+                        values=np.zeros((1, layer.m.shape[1])),
+                        axis=0,
+                    )
+                    layer.v = layer.v = np.append(
+                        layer.v,
+                        values=np.zeros((1, layer.v.shape[1])),
+                        axis=0,
+                    )
+                
 
     def forward(self, x: float | NDArray):
         """

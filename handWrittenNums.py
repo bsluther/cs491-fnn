@@ -2,10 +2,10 @@ import numpy as np
 from sklearn.datasets import fetch_openml
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
-from fnn import FNN
+from FNNwAdam import FNN
 import matplotlib.pyplot as plt
 import random
-from layer import Layer
+from layersWadam import Layer
 
 
 # Load MNIST dataset using sklearn
@@ -83,6 +83,7 @@ def evaluate_network(fnn, X_test, y_test, batch_size=128):
             total += 1
 
     accuracy = correct / total
+
     return accuracy
 
 
@@ -113,10 +114,10 @@ def main():
 
     # Train the FNN on MNIST dataset
     print("Starting training...")
-    fnn = train_fnn_mnist(X_train, y_train, X_test, y_test, batch_size=64, epochs=20, learning_rate=0.01)
+    fnn = train_fnn_mnist(X_train, y_train, X_test, y_test, batch_size=64, epochs=9, learning_rate=0.001)
     print("Training complete.")
 
-    display_predictions(fnn, X_test, y_test, num_samples=10)
+    print(evaluate_network(fnn, X_test, y_test, batch_size=64))
 
 if __name__ == "__main__":
     main()
