@@ -5,7 +5,7 @@ from functions import LossKey, get_loss_fn
 
 # pylint: disable =unused-argument
 
-# TODO: using default 64-bit floating point numbers, try switching to 16 or 32 to save time.
+# Modification the primary FNN to use ADAM learning.
 
 
 class History:

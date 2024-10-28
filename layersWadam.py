@@ -3,6 +3,8 @@ from functions import get_activation_fn
 from typing import Literal
 from functions import ActivationKey
 
+# Modification the primary Layer to use ADAM learning.
+
 
 class Layer:
     def __init__(
@@ -44,14 +46,15 @@ class Layer:
         self.activation_forward = forward
         self.activation_backward = backward
         self.rng = rng
-    
 
         if activation_key in ["relu", "leaky_relu", "log_softmax"]:
-            self.weights = self.rng.normal(0, np.sqrt(2 / in_features), size=(out_features, in_features))
+            self.weights = self.rng.normal(
+                0, np.sqrt(2 / in_features), size=(out_features, in_features)
+            )
         else:
             self.weights = self.rng.uniform(
                 low=-1, high=1, size=(out_features, in_features)
-        )
+            )
         self.m = np.zeros_like(self.weights)
         self.v = np.zeros_like(self.weights)
         # print(
@@ -60,21 +63,20 @@ class Layer:
 
     def ADAM_up(self, gr, lr, b1, b2, eps, t):
         """
-        gr is the current gradient, 
+        gr is the current gradient,
         lr is learning rate,
-        b1 is the decay rate is a hyperameter for the average decaying rate each iteration, gives control on how much the past average effects the current 
+        b1 is the decay rate is a hyperameter for the average decaying rate each iteration, gives control on how much the past average effects the current
         gradient
-        b2 is the decay for the larger gradients int he ast that would have a larger impact. 
+        b2 is the decay for the larger gradients int he ast that would have a larger impact.
         eps prevent divide by zero error, and t is the time step for bias correction
         """
-        #updating each parameter first
-        self.m = b1*self.m +(1-b1)*gr
-        self.v = b2*self.v +(1-b2)*(gr**2)
-        #creating bias correction for each method for update, this because we are initakizing to zero. This will help deal with the bias towards 0
-        m_correction = self.m/(1-(b1**t))
-        v_correction = self.v/(1-(b2**t))
-        #now doing the weight update with adam
-        self.weights = self.weights - lr*(m_correction/((np.sqrt(v_correction))+eps))
-        
-
-
+        # updating each parameter first
+        self.m = b1 * self.m + (1 - b1) * gr
+        self.v = b2 * self.v + (1 - b2) * (gr**2)
+        # creating bias correction for each method for update, this because we are initakizing to zero. This will help deal with the bias towards 0
+        m_correction = self.m / (1 - (b1**t))
+        v_correction = self.v / (1 - (b2**t))
+        # now doing the weight update with adam
+        self.weights = self.weights - lr * (
+            m_correction / ((np.sqrt(v_correction)) + eps)
+        )
