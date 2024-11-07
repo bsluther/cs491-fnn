@@ -2,10 +2,8 @@ import numpy as np
 from sklearn.datasets import fetch_openml
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
-from FNNwAdam import FNN
 import matplotlib.pyplot as plt
 import random
-from layersWadam import Layer
 
 
 # Load MNIST dataset using sklearn
