@@ -37,7 +37,7 @@ def train_fnn_mnist(X_train, y_train, X_test, y_test, batch_size=128, epochs=20,
         for i in range(0, len(X_train), batch_size):
             X_batch = X_train[i:i + batch_size]
             y_batch = y_train[i:i + batch_size]
-            loss = fnn.minibatchGD(X_batch, y_batch, loss_key='nll')
+            loss, _ = fnn.minibatchGD(X_batch, y_batch, loss_key='nll')
             epoch_loss += loss
         avg_epoch_loss = epoch_loss / (len(X_train) / batch_size)
         history.append(avg_epoch_loss)

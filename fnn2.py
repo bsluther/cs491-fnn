@@ -289,7 +289,7 @@ class FNN:
         for k, gradient in enumerate(averaged_gradients):
             self.layers[k].weights -= self.lr * gradient
 
-        return average_loss
+        return average_loss, gradients
 
     @staticmethod
     def validate_layer_sizes(layers: tuple[Layer, ...]):
