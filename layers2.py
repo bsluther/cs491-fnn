@@ -13,6 +13,7 @@ class Layer:
         out_features: int,
         activation_key: ActivationKey,
         rng=np.random.default_rng(),
+        use_xavier: bool = True
     ):
         """
         Construct a Layer with <code>in_features</code> input features and
@@ -35,6 +36,9 @@ class Layer:
                 A random number generator which will be used to initialize the weights.
                 Defaults to a random number generator with no seed value.
 
+            use_xavier(bool):
+                A boolean variable which lets you use Xavier Initialization (uniform distribution).
+
         Raises:
             ValueError: when the provided <code>activation_key</code> does not match a known
             activation function.
@@ -47,14 +51,18 @@ class Layer:
         self.activation_backward = backward
         self.rng = rng
 
-        if activation_key in ["relu", "leaky_relu", "log_softmax"]:
-            self.weights = self.rng.normal(
-                0, np.sqrt(2 / in_features), size=(out_features, in_features)
-            )
+        if use_xavier:
+            limit = np.sqrt(6 / (in_features + out_features))
+            self.weights = self.rng.uniform(-limit, limit, (out_features, in_features))
         else:
-            self.weights = self.rng.uniform(
-                low=-1, high=1, size=(out_features, in_features)
-            )
+            if activation_key in ["relu", "leaky_relu", "log_softmax"]:
+                self.weights = self.rng.normal(
+                    0, np.sqrt(2 / in_features), size=(out_features, in_features)
+                )
+            else:
+                self.weights = self.rng.uniform(
+                    low=-1, high=1, size=(out_features, in_features)
+                )
 
         self.m = np.zeros_like(self.weights)
         self.v = np.zeros_like(self.weights)

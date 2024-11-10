@@ -4,6 +4,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
 import matplotlib.pyplot as plt
 import random
+from fnn2 import FNN
+from layers2 import Layer
 
 
 # Load MNIST dataset using sklearn
@@ -24,10 +26,10 @@ def train_fnn_mnist(X_train, y_train, X_test, y_test, batch_size=128, epochs=20,
 
     rng = np.random.default_rng(1337)
     # Initialize the FNN with LogSoftmax activation in the last layer
-    l1 = Layer(in_features=784, out_features=128, activation_key="relu")
-    l2 = Layer(in_features=128, out_features=64, activation_key="relu")
-    l3 = Layer(in_features=64, out_features=64, activation_key="relu")
-    l4 = Layer(in_features=64, out_features=10, activation_key="log_softmax")
+    l1 = Layer(in_features=784, out_features=128, activation_key="relu", use_xavier=True)
+    l2 = Layer(in_features=128, out_features=64, activation_key="relu", use_xavier=True)
+    l3 = Layer(in_features=64, out_features=64, activation_key="relu", use_xavier=True)
+    l4 = Layer(in_features=64, out_features=10, activation_key="log_softmax", use_xavier=True)
 
     # Create the FNN model
     fnn = FNN(layers=(l1, l2, l3, l4), lr=learning_rate, bias=True, rng=rng)
