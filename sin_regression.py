@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from layer import Layer
-from fnn import FNN
+from layers2 import Layer
+from fnn2 import FNN
 
 
 def test_fnn_sin():
@@ -14,11 +14,12 @@ def test_fnn_sin():
     y_train = np.sin(x_train)
     loss_key = "mse"
     history = []
-    epochs = 1000
+    epochs = 100
     for _ in range(epochs):
         epoch_loss = 0
         for x, y in zip(x_train, y_train):
-            loss = net.gd(x, y, loss_key)
+            # loss = net.gd(x, y, loss_key)
+            loss = net.newton_bfgs(x, y, loss_key)
             epoch_loss += loss
         average_loss = epoch_loss / len(x_train)
         history.append(average_loss)

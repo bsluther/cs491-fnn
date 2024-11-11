@@ -2,6 +2,7 @@ import numpy as np
 from numpy.typing import NDArray
 from layers2 import Layer
 from functions import LossKey, get_loss_fn
+import math
 
 # pylint: disable =unused-argument
 
@@ -25,6 +26,14 @@ class History:
         self.g_h = [np.array([])] * K
         # Computed loss
         self.loss = None
+        # Loss-to-weight gradients for use in the Newton method, each layer's gradient matrix is
+        # flattened into a column vector
+        self.g_w = [np.array([])] * K
+        # Current weights for use in Newton method, each layer's weight matrix is flattend into a
+        # column vector
+        self.weights = [np.array([])] * K
+        # Approximation of the inverse Hessian
+        self.G = [np.array([])] * K
 
 
 class FNN:
@@ -48,6 +57,8 @@ class FNN:
         self.rng = rng
         self.layers = layers
         self.bias = bias
+        # History of the most recent update to the model, for use in the Newton method
+        self.prev_history: History | None = None
 
         if bias:
             # Add a bias node to each layer by adding a row and column to each each weight matrix
@@ -99,7 +110,7 @@ class FNN:
         return o
 
     def forward_with_history(
-        self, x: float | NDArray
+        self, x: float | NDArray, with_newton=False
     ) -> tuple[float | NDArray, History]:
         """
         Compute the output of the network and store intermediate values for use in
@@ -125,6 +136,11 @@ class FNN:
         # Apply the activation function element-wise, the Layer instance stores the function
         history.h[0] = self.layers[0].activation_forward(history.a[0])
 
+        if with_newton:
+            for k, layer in enumerate(self.layers):
+                # Store the current weights as a column vector for use in Newton method
+                history.weights[k] = layer.weights.flatten()
+
         # Continue forward propagation
         for k in range(1, len(self.layers), 1):
             # Current layer.
@@ -144,7 +160,7 @@ class FNN:
         return history.h[-1], history
 
     def backward_from_history(
-        self, y: float | NDArray, history: History, loss_key: LossKey
+        self, y: float | NDArray, history: History, loss_key: LossKey, with_newton=False
     ) -> tuple[list[NDArray], History]:
         """
         Compute gradients with respect to the loss function specified by the <code>loss_key</code>.
@@ -206,6 +222,10 @@ class FNN:
             # When we reach the first layer, need to pass the input x rather than look up h[k-1].
             prev_h = history.h[k - 1] if k > 0 else np.array([history.x])
             gradients[k] = np.outer(history.g_a[k], prev_h)
+
+        if with_newton:
+            # Store the gradients for use in Newton method
+            history.g_w = [gradient.flatten() for gradient in gradients]
 
         # Return the loss-to-weight derivatives and history (probably don't need to return history).
         return gradients, history
@@ -290,6 +310,89 @@ class FNN:
             self.layers[k].weights -= self.lr * gradient
 
         return average_loss
+
+    def newton_bfgs(self, x: float | NDArray, y: float | NDArray, loss_key: LossKey):
+        # If we don't have a history of the last update, perform classic gradient descent
+        if self.prev_history is None:
+            _, history = self.forward_with_history(x, with_newton=True)
+            gradients, history = self.backward_from_history(
+                y, history, loss_key, with_newton=True
+            )
+            # Set the initial approximations of the inverse Hessians to identity matrices
+            for k, weights in enumerate(history.weights):
+                n = len(weights)
+                history.G[k] = np.identity(n)
+            self.prev_history = history
+            # Perform standard GD
+            loss = self.gd(x, y, loss_key)
+            return loss
+
+        # We have a history of the previous update, use it to perform Newton learning
+
+        # Standard forward propagation
+        y_hat, history = self.forward_with_history(x, with_newton=True)
+        # Standard backpropagation
+        gradients, history = self.backward_from_history(
+            y, history, loss_key, with_newton=True
+        )
+        # Look up the loss function with the provided loss_key
+        loss_forward, _ = get_loss_fn(loss_key)
+        loss = loss_forward(y_hat, y)
+
+        # Debugging breakpoint
+        for gradient in gradients:
+            if np.isnan(gradient).any():
+                # We have a problem..
+                boo = 1
+
+        # Compute the inverse Hessian approximation for each layer
+        for k in range(0, len(self.layers)):
+            # Change in parameter since the last update
+            q = self.prev_history.weights[k] - history.weights[k]
+            # Change in gradient since the last update
+            v = self.prev_history.g_w[k] - history.g_w[k]
+
+            delta = 1 / np.dot(q, v)
+            I = np.identity(len(q))
+
+            # Debugging breakpoint
+            if np.isnan(delta):
+                # We have a problem...
+                boo = 1
+
+            # Gnarly equation for the inverse Hessian approximation, see Aggarwal pg 149, eqn 4.22
+            # Broken into individual terms for debugging
+            term_1 = I - delta * np.outer(q, v)
+            term_2 = self.prev_history.G[k]
+            term_3 = I - delta * np.outer(v, q)
+            term_4 = delta * np.outer(q, q)
+            G = term_1 @ term_2 @ term_3 + term_4
+            history.G[k] = G
+
+            # More debugging
+            def check_symmetric(a, rtol=1e-05, atol=1e-08):
+                return np.allclose(a, a.T, rtol=rtol, atol=atol)
+
+            if check_symmetric(G):
+                boo = 1
+            else:
+                boo = 1
+            if np.isnan(G).any():
+                boo = 1
+
+        # Update weights using the approximation of the inverse Hessian
+        for k, layer in enumerate(self.layers):
+            # Tried using a learning rate, also tried without. Line search is the recommended way,
+            # haven't tried to figure that out.
+            transformed_gradient = self.lr * (history.G[k] @ history.g_w[k])
+            # Needed to treat the weights and gradients as column vectors for the above computation,
+            # reshape to a matrix with the usual shape.
+            reshaped_update = np.reshape(transformed_gradient, layer.weights.shape)
+            layer.weights -= reshaped_update
+        # Store the history of this update for use in the next iteration
+        self.prev_history = history
+
+        return loss
 
     @staticmethod
     def validate_layer_sizes(layers: tuple[Layer, ...]):
