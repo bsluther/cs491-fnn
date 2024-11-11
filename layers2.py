@@ -70,15 +70,21 @@ class Layer:
         #     f" Initial max weight = {np.max(np.abs(self.weights))}"
         # )
 
-    def ADAM_up(self, gr, lr, b1, b2, eps, t):
+    def ADAM_up(self, gr, lr, b1, b2, eps, t, lr_decay=0.0):
         """
         gr is the current gradient,
         lr is learning rate,
-        b1 is the decay rate is a hyperameter for the average decaying rate each iteration, gives control on how much the past average effects the current
-        gradient
-        b2 is the decay for the larger gradients int he ast that would have a larger impact.
+        b1 and b2 control the exponential decay rates
+        lr_decay is used to reduce the learning rate over time
         eps prevent divide by zero error, and t is the time step for bias correction
         """
+
+        # Bias-corrected learning rate
+        lr_t = lr * (np.sqrt(1 - b2**t) / (1 - b1**t))
+
+        # Optionally decay the learning rate further
+        adjusted_lr = lr_t / (1 + lr_decay * t)
+
         #help with gradient explosion
         clip_value = 1.0
         gr = np.clip(gr, -clip_value, clip_value)
@@ -89,9 +95,7 @@ class Layer:
         m_correction = self.m / (1 - (b1**t))
         v_correction = self.v / (1 - (b2**t))
         # now doing the weight update with adam
-        self.weights = self.weights - lr * (
-            m_correction / ((np.sqrt(v_correction)) + eps)
-        )
+        self.weights -=  adjusted_lr * (m_correction / ((np.sqrt(v_correction)) + eps))
     #nestrov learning technique update
     def NestML(self, lr, gr, b1):
         pass

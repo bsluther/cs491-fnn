@@ -25,16 +25,16 @@ def train_fnn_mnist(X_train, y_train, X_test, y_test, batch_size=128, epochs=20,
     # Adam hyperparameters
     beta1, beta2 = 0.9, 0.999
     epsilon = 1e-8
-    t = 1  # Initialize time step
+    t = 1  # time step for Adam algorithm
 
 
-    # Initialize the FNN with LogSoftmax activation in the last layer
+    #initialize the FNN
     l1 = Layer(in_features=784, out_features=128, activation_key="relu", use_xavier=True)
     l2 = Layer(in_features=128, out_features=64, activation_key="relu", use_xavier=True)
     l3 = Layer(in_features=64, out_features=64, activation_key="relu", use_xavier=True)
     l4 = Layer(in_features=64, out_features=10, activation_key="log_softmax", use_xavier=True)
 
-    fnn = FNN(layers=(l1, l2, l3, l4), lr=learning_rate, bias=True, rng=rng)
+    fnn = FNN(layers=(l1, l2, l3, l4), lr=learning_rate, bias=False, rng=rng)
     history = []  # Store loss for each epoch
 
     start_time = time.time()  # Start timer
