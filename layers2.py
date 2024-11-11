@@ -70,7 +70,7 @@ class Layer:
         #     f" Initial max weight = {np.max(np.abs(self.weights))}"
         # )
 
-    def ADAM_up(self, gr, lr, b1, b2, eps, t, lr_decay=0.0):
+    def ADAM_up(self, gr, lr, b1, b2, eps, t, lr_decay=0.99):
         """
         gr is the current gradient,
         lr is learning rate,

@@ -92,7 +92,7 @@ def main():
 
     # Train the FNN on MNIST dataset
     print("Starting training...")
-    fnn, history, total_time = train_fnn_mnist(X_train, y_train, X_test, y_test, batch_size=64, epochs=9, learning_rate=0.001)
+    fnn, history, total_time = train_fnn_mnist(X_train, y_train, X_test, y_test, batch_size=64, epochs=9, learning_rate=0.01)
     print("Training complete.")
 
     # Print the total training time and final accuracy
