@@ -27,6 +27,7 @@ class History:
         self.loss = None
 
 
+
 class FNN:
     """
     A feedforward neural network (FNN) which computes output via forward propagation and can be
@@ -38,17 +39,22 @@ class FNN:
     """
 
     def __init__(
-        self, layers: tuple[Layer, ...], lr=0.01, bias=True, rng=np.random.default_rng(), optimizer="sgd"
+        self, layers: tuple[Layer, ...], lr=0.01, bias=True, rng=np.random.default_rng(), optimizer="sgd", useNestrov=False, momentum=0.9
     ):
         # Check that layer sizes match up
         if not self.validate_layer_sizes(layers):
             raise ValueError("Layer size mismatch")
+        self.useNestrov = False
 
         self.lr = lr
         self.rng = rng
         self.layers = layers
         self.bias = bias
         self.optimizer = optimizer
+        self.momentum = momentum
+        self.useNestrov = useNestrov
+
+
 
         if bias:
             # Add a bias node to each layer by adding a row and column to each each weight matrix
@@ -238,7 +244,10 @@ class FNN:
         gradients, history = self.backward_from_history(y, history, loss_key)
         # Update the weights according to the gradients
         for k, gradient in enumerate(gradients):
-            self.layers[k].weights -= self.lr * gradient
+            if self.useNestrov:
+                self.layers[k].NestML(self.lr, gradient, self.momentum)
+            else:
+                self.layers[k].weights -= self.lr * gradient
 
         return loss
 
@@ -288,7 +297,10 @@ class FNN:
 
         # Update weights
         for k, gradient in enumerate(averaged_gradients):
-            self.layers[k].weights -= self.lr * gradient
+            if self.useNestrov:
+                self.layers[k].NestML(self.lr, gradient, self.momentum)
+            else:
+                self.layers[k].weights -= self.lr * gradient
 
         return average_loss, gradients
 

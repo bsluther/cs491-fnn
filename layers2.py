@@ -13,7 +13,7 @@ class Layer:
         out_features: int,
         activation_key: ActivationKey,
         rng=np.random.default_rng(),
-        use_xavier: bool = True
+        use_xavier: bool = True,
     ):
         """
         Construct a Layer with <code>in_features</code> input features and
@@ -50,6 +50,7 @@ class Layer:
         self.activation_forward = forward
         self.activation_backward = backward
         self.rng = rng
+
 
         if use_xavier:
             limit = np.sqrt(6 / (in_features + out_features))
@@ -95,10 +96,15 @@ class Layer:
         m_correction = self.m / (1 - (b1**t))
         v_correction = self.v / (1 - (b2**t))
         # now doing the weight update with adam
-        self.weights -=  adjusted_lr * (m_correction / ((np.sqrt(v_correction)) + eps))
+        self.weights -=  adjusted_lr * (m_correction / ((np.sqrt(v_correction)) + eps))\
+        
     #nestrov learning technique update
     def NestML(self, lr, gr, b1):
-        pass
+        mom_W = self.weights - b1 * self.m
+        self.m = b1 * self.m + lr * gr
+        self.weights = mom_W - lr * self.m
+
+
     #newton update technique
     def NewtUpdate(self):
         pass
