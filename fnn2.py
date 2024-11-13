@@ -38,7 +38,7 @@ class FNN:
     """
 
     def __init__(
-        self, layers: tuple[Layer, ...], lr=0.01, bias=True, rng=np.random.default_rng()
+        self, layers: tuple[Layer, ...], lr=0.01, bias=True, rng=np.random.default_rng(), optimizer="sgd"
     ):
         # Check that layer sizes match up
         if not self.validate_layer_sizes(layers):
@@ -48,6 +48,7 @@ class FNN:
         self.rng = rng
         self.layers = layers
         self.bias = bias
+        self.optimizer = optimizer
 
         if bias:
             # Add a bias node to each layer by adding a row and column to each each weight matrix

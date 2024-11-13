@@ -100,5 +100,5 @@ class Layer:
     def NestML(self, lr, gr, b1):
         pass
     #newton update technique
-    def NewtUpdate():
+    def NewtUpdate(self):
         pass
