@@ -117,7 +117,7 @@ def main():
 
     # Train the FNN on MNIST dataset
     print("Starting training on Iris Dataset...")
-    fnn, history, total_time, train_accuracies = train_fnn_Iris(X_train, y_train, X_test, y_test, batch_size=16, epochs=250, learning_rate=0.001)
+    fnn, history, total_time, train_accuracies = train_fnn_Iris(X_train, y_train, X_test, y_test, batch_size=16, epochs=50, learning_rate=0.01)
     print("Training complete.")
 
     # Print the total training time and final accuracy
